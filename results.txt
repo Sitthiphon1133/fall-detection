@@ -1,0 +1,53 @@
+fold: test on P01 | train frames 12145 (positives 537)
+   tuned v0 = 1.50
+fold: test on P02 | train frames 15397 (positives 799)
+   tuned v0 = 1.00
+fold: test on P03 | train frames 15156 (positives 828)
+   tuned v0 = 1.25
+
+=== 1) Frame level: is this frame part of the falling moment? (label 1 vs label 0, label 2 excluded) ===
+method                             precision   recall     F1     TP     FP     FN
+Rule-based (V_FALL=1.4)                0.536    0.178  0.268    193    167    889
+Rule-based (v0 tuned)                  0.331    0.188  0.240    203    410    879
+kNN (k=5, vote>=0.4)                   0.401    0.694  0.509    751   1120    331
+Logistic Regression (p>=0.5)           0.227    0.774  0.351    838   2854    244
+
+=== 2) End to end: trigger + Phase 2 state machine (lying posture, still for T) -> alert ===
+T = 3s. A fall recording counts as detected if an alert appears after the fall started.
+method                              detected  recall  prec.  false alarms  per hour  delay(s)
+Rule-based (V_FALL=1.4)                24/28    0.86   1.00           0+0       0.0       5.3
+Rule-based (v0 tuned)                  24/28    0.86   1.00           0+0       0.0       5.3
+kNN (k=5, vote>=0.4)                   24/28    0.86   0.75           8+0      29.0       5.3
+Logistic Regression (p>=0.5)           24/28    0.86   0.75           8+0      29.0       5.3
+false alarms = alerts in non-fall recordings + (alerts in fall recordings before the fall / extra alerts)
+
+=== 3) Which recordings went wrong? ===
+Missed falls, Rule-based (V_FALL=1.4):
+   P01_fall_20261015_172821.csv (P01): lying+still only 0.0s (< T = 3s)
+   P01_fall_20261015_172850.csv (P01): lying+still only 1.5s (< T = 3s)
+   P03_fall_20261016_013902.csv (P03): lying+still only 0.2s (< T = 3s)
+   P03_fall_20261016_014113.csv (P03): lying+still only 2.1s (< T = 3s)
+False alarms, kNN (k=5, vote>=0.4):
+   P01_sofa_20261015_153507.csv: sofa: 2 alert(s) at t = 5.2s, 17.8s
+   P02_sofa_20261015_155143.csv: sofa: 1 alert(s) at t = 6.0s
+   P02_sofa_20261015_155157.csv: sofa: 1 alert(s) at t = 6.2s
+   P02_sofa_20261015_155244.csv: sofa: 1 alert(s) at t = 6.4s
+   P03_sofa_20261016_014922.csv: sofa: 1 alert(s) at t = 8.2s
+   P03_sofa_20261016_015044.csv: sofa: 1 alert(s) at t = 10.7s
+   P03_sofa_20261016_015118.csv: sofa: 1 alert(s) at t = 6.7s
+False alarms, Logistic Regression (p>=0.5):
+   P01_sofa_20261015_153507.csv: sofa: 2 alert(s) at t = 5.2s, 17.8s
+   P02_sofa_20261015_155143.csv: sofa: 1 alert(s) at t = 6.0s
+   P02_sofa_20261015_155157.csv: sofa: 1 alert(s) at t = 6.2s
+   P02_sofa_20261015_155244.csv: sofa: 1 alert(s) at t = 6.4s
+   P03_sofa_20261016_014922.csv: sofa: 1 alert(s) at t = 8.2s
+   P03_sofa_20261016_015044.csv: sofa: 1 alert(s) at t = 10.7s
+   P03_sofa_20261016_015118.csv: sofa: 1 alert(s) at t = 6.7s
+
+Logistic Regression weights (standardised features, trained on all data):
+   v       -0.853
+   r       +0.696
+   hy      -0.542
+   t_still -0.380
+   a       +0.283
+   theta   +0.269
